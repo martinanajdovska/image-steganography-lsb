@@ -34,16 +34,16 @@ public class MessageServiceImpl implements MessageService {
                 Color oldColor = new Color(image.getRGB(x, y));
                 int red = oldColor.getRed(), green = oldColor.getGreen(), blue = oldColor.getBlue();
 
-                red = red & pixelMask | letterByte & bitMask;
-                letterByte = (byte) (letterByte >> 3);
+                red = red & pixelMask | letterByte & bitMask; // copy 3 bits of the letter into the red channel
+                letterByte = (byte) (letterByte >> 3); // shift the copied bits
 
-                green = green & 0xFC | letterByte & 0x03; //copy 2 bits instead of 3
+                green = green & 0xFC | letterByte & 0x03; // copy 2 bits instead of 3 for the green channel
                 letterByte = (byte) (letterByte >> 2);
 
                 blue = blue & pixelMask | letterByte & bitMask;
 
                 Color newColor = new Color(red, green, blue);
-                image.setRGB(x, y, newColor.getRGB());
+                image.setRGB(x, y, newColor.getRGB()); // update the pixel with the encoded letter
                 i++;
                 x++;
             }
@@ -72,18 +72,21 @@ public class MessageServiceImpl implements MessageService {
                     Color oldColor = new Color(image.getRGB(x, y));
                     int red = oldColor.getRed(), green = oldColor.getGreen(), blue = oldColor.getBlue();
 
+                    // encode one letter bit into chosen channel then shift the bits
                     red = changeChannelValue(red,letterByte);
                     letterByte = (byte) (letterByte << 1);
 
                     green = changeChannelValue(green,letterByte);
                     letterByte = (byte) (letterByte << 1);
 
+                    // when on the last iteration of the 3 pixels check if message is over
                     if (pixel == 2) {
                         if (i == messageBytes.length - 1) {
-                            if (blue % 2 == 0) blue++; // if the end of the message, make the bit odd
+                            if (blue % 2 == 0) blue++; // if the end of the message, make the bit odd to flag the end
                         } else {
                             if (blue % 2 != 0) {
                                 // if not the end of the message, make the bit even
+                                // make sure channel values stay in range 0-255
                                 if (blue == 255) blue--;
                                 else blue++;
                             }
@@ -94,7 +97,7 @@ public class MessageServiceImpl implements MessageService {
                     }
 
                     Color newColor = new Color(red, green, blue);
-                    image.setRGB(x, y, newColor.getRGB());
+                    image.setRGB(x, y, newColor.getRGB()); // update the pixel with the encoded letter
 
                     x++;
                 }
@@ -110,9 +113,12 @@ public class MessageServiceImpl implements MessageService {
 
     // match pixel and letter lsb on even or odd
     private int changeChannelValue(int channel, byte letter){
+        // if letter bit is even and channel value is odd then make channel value even as well
         if ((letter & 0x80) != 0x80 && channel % 2 != 0) {
             channel--;
-        } else if ((letter & 0x80) == 0x80 && channel % 2 == 0) {
+        } // if letter bit is odd and channel value is even then make channel value odd as well
+        else if ((letter & 0x80) == 0x80 && channel % 2 == 0) {
+            // check if channel value will stay in range 0-255
             if (channel != 0) {
                 channel--;
             } else {
@@ -137,6 +143,7 @@ public class MessageServiceImpl implements MessageService {
                 Color color = new Color(image.getRGB(x, y));
                 int red = color.getRed(), green = color.getGreen(), blue = color.getBlue();
 
+                // copy the encoded bits from the color channels in reverse order
                 bits = (blue & pixelMask);
 
                 bits = bits << 2;
@@ -170,6 +177,7 @@ public class MessageServiceImpl implements MessageService {
                     Color oldColor = new Color(image.getRGB(x, y));
                     int red = oldColor.getRed(), green = oldColor.getGreen(), blue = oldColor.getBlue();
 
+                    // copy the least significant bit's value
                     bits = bits | (red % 2);
 
                     bits = bits << 1;
