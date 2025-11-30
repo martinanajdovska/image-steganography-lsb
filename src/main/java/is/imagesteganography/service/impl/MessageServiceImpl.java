@@ -82,7 +82,11 @@ public class MessageServiceImpl implements MessageService {
                         if (i == messageBytes.length - 1) {
                             if (blue % 2 == 0) blue++; // if the end of the message, make the bit odd
                         } else {
-                            if (blue % 2 != 0) blue++; // if not the end of the message, make the bit even
+                            if (blue % 2 != 0) {
+                                // if not the end of the message, make the bit even
+                                if (blue == 255) blue--;
+                                else blue++;
+                            }
                         }
                     } else {
                         blue = changeChannelValue(blue,letterByte);
